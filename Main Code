@@ -5,7 +5,7 @@ l = 1;      % Pendulum length (m)
 g = 9.81;   % Gravity
 
 % Target position
-T = [1; 2.2];
+T = [1; 2.14];
 
 % Target Time
 T_time = 2;
