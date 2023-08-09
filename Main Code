@@ -111,7 +111,7 @@ end
 
 
 function cost = objective_function(c, M, m, l, g, T, T_target)
-    % control input polynomial
+    % control input
     u = @(t) c(1) + c(2)*t + c(3)*t^2 + c(4)*t^3 + c(5)*t^4 + c(6)*t^5;
     
     % calculate the position of the pendulum at the target time
