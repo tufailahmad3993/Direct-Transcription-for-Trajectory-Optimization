@@ -1,0 +1,151 @@
+% Given data
+M = 3;      % Cart mass (Kg)
+m = 1;      % Pendulum mass (Kg)
+l = 1;      % Pendulum length (m)
+g = 9.81;   % Gravity
+
+% Target position
+T = [1; 2.2];
+
+% Target Time
+T_time = 2;
+
+% Random initial guess for coefficients
+% x0 = [0.5; 1; 0.3; 0.5; 0.1; 0.02];
+x0 = [0; 0; 0; 0; 0; 0];
+
+% Bounds for optimization variables
+lb = [];
+ub = [];
+
+% Linear inequality constraints (not specified in your code)
+A = [];
+b = [];
+
+% Optimization using fmincon
+cfs = fmincon(@(c) objective_function(c, M, m, l, g, T, T_time), x0, A, b, lb, ub);
+
+% Extract optimal coefficients from the result
+c0 = cfs(1);
+c1 = cfs(2);
+c2 = cfs(3);
+c3 = cfs(4);
+c4 = cfs(5);
+c5 = cfs(6);
+
+% Function to calculate control input u(t) based on coefficients
+u = @(t) c0 + c1*t + c2*t^2 + c3*t^3 + c4*t^4 + c5*t^5;
+
+    
+    % Simulate the system using the control input
+    tspan = [0, T_time];
+    init_cond = [0; 0; 0; 0]; % [x; phi; x_dot; phi_dot] (initially at rest)
+    [t, state] = ode45(@(t, state) sys_dynamics(t, state, M, m, l, g, u), tspan, init_cond);
+    
+    % Position of the tip of the pendulum 
+    x_tip = state(end, 1) -l * sin(state(end, 2));
+    y_tip = -l * cos(state(end, 2));
+    
+    % Print the final position of the tip of the pendulum
+    fprintf('Final Position of the Pendulum Tip:\n');
+    fprintf('x_tip = %.4f, y_tip = %.4f\n', x_tip, y_tip);
+    
+    % Plotting
+    figure;
+    plot(t, state(:, 1), 'b-', 'LineWidth', 1);
+    hold on;
+    plot(t, state(:, 2), 'g-', 'LineWidth', 1);
+    plot(t, state(:, 3), 'r-', 'LineWidth', 1);
+    plot(t, state(:, 4), 'c-', 'LineWidth', 1);
+    xlabel('Time (s)');
+    ylabel('States');
+    grid on;
+    legend('(x)', '(phi)', '(x\_dot)', '(phi\_dot)');
+    title('Combined Plots');
+    figure;
+    plot(t, arrayfun(u, t), 'b-', 'LineWidth', 1);
+    xlabel('Time (s)');
+    ylabel('Control Input (u)');
+    title('Control Input vs. Time');
+    grid on;
+    
+% Initialize time vector and tip_traj storage
+figure;
+tip_traj = zeros(length(t), 2); 
+
+for i = 1:length(t)
+    % Plot the cart position as a black rectangle
+    cartWidth = 0.1;  % Adjust the width of the cart rectangle
+    cartHeight = 0.05; % Adjust the height of the cart rectangle
+    cartX = state(i, 1) - cartWidth/2;
+    cartY = -cartHeight/2;
+    rectangle('Position', [cartX, cartY, cartWidth, cartHeight], 'FaceColor', 'k');
+
+    hold on;
+
+    % Plot the pendulum rod
+    plot([state(i, 1), state(i, 1) - l * sin(state(i, 2))], [0, -l * cos(state(i, 2))], 'r-', 'LineWidth', 2);
+    
+    % Plot the pendulum tip
+    plot(state(i, 1) - l * sin(state(i, 2)), -l * cos(state(i, 2)), 'ro', 'MarkerSize', 5);
+    
+    % Store the tip trajectory coordinates
+    tip_traj(i, :) = [state(i, 1) - l * sin(state(i, 2)), -l * cos(state(i, 2))];
+    
+    % Plot the trajectory of the pendulum tip 
+    plot(tip_traj(1:i, 1), tip_traj(1:i, 2), 'k--', 'LineWidth', 1);
+
+    % Set axis limits and aspect ratio
+    xlim([-2, 2]);
+    ylim([-2, 2]);
+    axis equal;
+
+    % Labels for the X and Y axes
+    xlabel('X Position (m)');
+    ylabel('Y Position (m)');
+    
+    % Include time in the title
+    title(sprintf('Pendulum Animation (Time: %.2f s)', t(i)));
+
+    % Pause to control the animation speed
+    pause(0.5);
+end
+
+
+
+function cost = objective_function(c, M, m, l, g, T, T_target)
+    % control input polynomial
+    u = @(t) c(1) + c(2)*t + c(3)*t^2 + c(4)*t^3 + c(5)*t^4 + c(6)*t^5;
+    
+    % calculate the position of the pendulum at the target time
+    tspan = [0, T_target];
+    init_cond = [0; 0; 0; 0];
+    [~, state] = ode45(@(t, state) sys_dynamics(t, state, M, m, l, g, u), tspan, init_cond);
+    
+    % Extract the position of the tip of the pendulum
+    x_tip = state(end, 1) - l * sin(state(end, 2));
+    y_tip = -l * cos(state(end, 2));
+    tip_position = [x_tip; y_tip];
+    
+    % Calculate the difference between the tip position and the target position
+    diff = tip_position - T;
+    
+    % Calculate the cost as the squared norm of the difference
+    cost = norm(diff)^2;
+end
+
+function deriv = sys_dynamics(t, state, M, m, l, g, u)
+    x = state(1);
+    phi = state(2);
+    x_dot = state(3);
+    phi_dot = state(4);
+    
+    % Calculate the control input based on the provided function u(t)
+    u_t = u(t);
+    
+    % Derivatives of the states
+    x_d_dot = (l*m*sin(phi)*phi_dot^2 + u_t + g*m*cos(phi)*sin(phi)) / (-m*cos(phi)^2 + M + m);
+    phi_d_dot = -(l*m*cos(phi)*sin(phi)*phi_dot^2 + u_t*cos(phi) + g*m*sin(phi) + M*g*sin(phi)) / (l*(-m*cos(phi)^2 + M + m));
+  
+    deriv = [x_dot; phi_dot; x_d_dot; phi_d_dot];
+end
