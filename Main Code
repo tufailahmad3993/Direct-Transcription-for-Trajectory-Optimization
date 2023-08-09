@@ -18,7 +18,7 @@ x0 = [0; 0; 0; 0; 0; 0];
 lb = [];
 ub = [];
 
-% Linear inequality constraints (not specified in your code)
+% Linear inequality constraints 
 A = [];
 b = [];
 
