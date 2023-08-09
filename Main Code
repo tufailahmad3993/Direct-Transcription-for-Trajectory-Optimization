@@ -104,10 +104,7 @@ for i = 1:length(t)
     xlabel('X Position (m)');
     ylabel('Y Position (m)');
     
-    % Include time in the title
     title(sprintf('Pendulum Animation (Time: %.2f s)', t(i)));
-
-    % Pause to control the animation speed
     pause(0.5);
 end
 
