@@ -1,0 +1,14 @@
+syms x phi x_dot phi_dot x_d_dot phi_d_dot q2_2dot M m l g u
+ 
+VT1= u;
+VP1=  (m+M)*x_d_dot + m*l*phi_d_dot*cos(phi) - m*l*(phi_dot)^2*sin(phi);
+FF1=(VT1-VP1);
+VT2=0;
+VP2= -l*phi_d_dot - g*sin(phi)- x_d_dot*cos(phi);
+FF2=(VT2-VP2);
+[x_d_dot,phi_d_dot]=solve(FF1,FF2,x_d_dot,phi_d_dot)
+
+%Output
+%x_d_dot = (l*m*sin(phi)*phi_dot^2 + u + g*m*cos(phi)*sin(phi))/(- m*cos(phi)^2 + M + m)
+%phi_d_dot = -(l*m*cos(phi)*sin(phi)*phi_dot^2 + u*cos(phi) + g*m*sin(phi) + M*g*sin(phi))/(l*(- m*cos(phi)^2 + M + m))
+ 
